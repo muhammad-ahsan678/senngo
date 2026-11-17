@@ -1,7 +1,7 @@
 # Product Requirements Document
 
 Status: Discovery draft — incomplete; updated as the concept is discussed.
-Last updated: 2026-11-16
+Last updated: 2026-11-17
 Product name: To be decided.
 
 ## 1. Product concept
@@ -14,7 +14,7 @@ Target users, primary use cases, launch market, and reasons to choose this over 
 
 ## 2. Proposed plans
 
-These are the founder's initial proposals. Monthly allowance accounting and expiry rules need clarification before implementation.
+These are the founder's initial proposals. The product will enforce separate limits for cumulative monthly uploads and current storage. Exact storage caps, detailed accounting, and expiry rules need clarification before implementation.
 
 | Offering | Price | Monthly allowance | Maximum file size | File expiry | Pool member limit when creating a pool |
 | --- | --- | --- | --- | --- | --- |
@@ -23,6 +23,13 @@ These are the founder's initial proposals. Monthly allowance accounting and expi
 | One-time large file | $2/file | Relationship to monthly allowance undecided | 3 GB | 30 days | No separate pool benefit specified |
 
 Prices are in USD. MB and GB are recorded as provided; exact byte definitions are undecided.
+
+### Confirmed allowance model
+
+- Track cumulative monthly uploads and current storage separately. Both limits apply.
+- Deleting or expiring a file releases its current storage usage but does not restore its consumed monthly upload allowance.
+- The proposed 700 MB free and 10 GB paid allowances remain monthly upload allowances. Current storage caps for each tier are undecided.
+- Monthly reset timing, treatment of failed or partial uploads, and interactions with pools, one-time purchases, and ad rewards remain undecided.
 
 ## 3. File sharing
 
@@ -103,7 +110,7 @@ Suggestions only; not approved requirements:
 Resolve first:
 
 1. Who is the primary user, and what file-sharing problem do they face today?
-2. Does the monthly allowance mean cumulative uploads or files stored at one time? Does deleting or expiring a file restore allowance?
+2. What current storage cap applies to each tier alongside its cumulative monthly upload allowance?
 3. Can a pool member use another member's unused allowance? For example, can a free member upload more than 700 MB in a pool with a paid member?
 
 Resolve next:
