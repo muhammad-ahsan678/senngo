@@ -22,8 +22,9 @@ Public uploads need limits on repeated uploads, total storage use, and download 
 | Limit | Proposed launch cap |
 | --- | --- |
 | Transfer size | 250 MB total across up to 10 files |
+| Size per file | 90 MB for the first release |
 | Storage in use or reserved | Stop accepting new uploads at 50 GB and warn the operator at 40 GB |
-| Upload starts per IP | 5 per hour and 20 per 24 hours |
+| New transfers per IP | 5 per hour and 20 per 24 hours |
 | File or ZIP download starts per IP | 30 per 10 minutes |
 | Completed downloads per file | 20 across all recipients, including completed ZIP downloads |
 | Failed password attempts per IP and transfer | 5 per 15 minutes |
@@ -34,7 +35,7 @@ Use one web service with persistent transfer records, private file storage, and 
 
 Reserve one slot per included file before streaming so simultaneous requests cannot exceed the cap. Increment each file's completed count only after the server finishes sending the full file or ZIP response. A completed ZIP counts once for each included file. On a stream error, disconnect, or timeout, release the reservations. Reclaim slots left by a server crash after the download deadline. When a file reaches 20 completed downloads, mark it as having reached its limit and omit it from future ZIPs. Other files stay available under their own limits.
 
-The launch plan assumes the R3 object store has no egress charge. Downloads streamed through the web service still use the app host's bandwidth.
+Cloudflare Workers runs the website and sends downloads. Cloudflare R2 stores the files privately. Cloudflare sets a 100 MB limit per upload request on Free and Pro domains. The proposed 90 MB per-file cap lets the website upload one file at a time and still share up to 250 MB under one link. R2 charges for storage and file operations. Sending data out of R2 is free. [Workers limits](https://developers.cloudflare.com/workers/platform/limits/) [R2 pricing](https://developers.cloudflare.com/r2/pricing/)
 
 ## Alternatives weighed
 
@@ -43,7 +44,7 @@ The launch plan assumes the R3 object store has no egress charge. Downloads stre
 
 ## Build order
 
-1. Build the guest upload page and upload endpoint. Enforce file, storage, and upload rate limits. Show progress, save transfer records, and issue the two links after every file is ready.
+1. Build the guest upload page on Cloudflare Workers. Upload files to R2 one at a time. Enforce file, storage, and upload rate limits. Show progress, save transfer records, and issue the two links after every file is ready.
 2. Build the recipient page, optional password check, file downloads, and ZIP download. Apply the same access checks and per-file download cap to both download paths. Store password hashes and rate-limit downloads and password attempts.
 3. Add the sender’s delete action and 24-hour expiry. Run cleanup for deleted, expired, and abandoned uploads. Retry failed cleanup on the next run.
 4. Add user-facing errors and verify the flow from two separate browser sessions. Log operation failures with a request ID and keep passwords and private links out of logs.
@@ -53,6 +54,7 @@ The launch plan assumes the R3 object store has no egress charge. Downloads stre
 - A sender uploads several files and copies one share link. A recipient in a separate browser downloads an individual file and the full ZIP. The individual file and extracted ZIP files match the originals. Every ZIP entry uses the Store method.
 - A wrong password leaves downloads locked. The right password makes the files available. The share link cannot authorize deletion.
 - Completed repeat downloads from the same browser and completed ZIPs count toward each file's 20 downloads. An interrupted file or ZIP download releases its reserved slots and allows a retry. The service prevents a 21st completed download, even with simultaneous requests. Other files remain available individually and in the ZIP.
+- On the deployed Worker, a sender can upload a full 250 MB transfer across several files and a recipient can download its ZIP. Test an interrupted download there too, so the download count is checked on the launch setup.
 - An oversized or interrupted upload shows an actionable error. The sender can retry, and partial files are cleaned up.
 - Requests above a rate limit tell the user when to retry. Concurrent uploads stay within the storage budget. When space runs out, existing downloads still work and new uploads resume after cleanup frees space.
 - Deleting one file removes it from the recipient’s list, individual download, and next ZIP while other files stay available. After 24 hours, all new download requests are blocked, even before cleanup runs.
@@ -60,4 +62,4 @@ The launch plan assumes the R3 object store has no egress charge. Downloads stre
 
 ## Key decisions to confirm
 
-Anyone can upload as a guest at launch, and each file has 20 completed downloads total. ZIPs bundle files using the Store method. The proposed upload, storage, and rate limits are working defaults for about 76 GB of available storage. Confirm the app host's outbound bandwidth allowance before setting a global traffic limit.
+Anyone can upload as a guest at launch, and each file has 20 completed downloads total. ZIPs bundle files using the Store method. The proposed upload, storage, and rate limits are working defaults for about 76 GB of available storage. Confirm whether the first release needs to accept single files larger than 90 MB.
